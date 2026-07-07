@@ -1,14 +1,80 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
+<BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="$CONTROLLER_NAME$"
-            prefHeight="400.0" prefWidth="600.0" >
+            fx:controller="com.estoque.controller.ProdutoController">
 
-</AnchorPane>
+    <left>
+        <VBox spacing="10" styleClass="painel-formulario" prefWidth="300">
+            <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+            <Label text="Cadastro de Produto" styleClass="titulo-secao"/>
+
+            <Label text="Código:"/>
+            <TextField fx:id="campoCodigo" promptText="Ex: P0004"/>
+
+            <Label text="Nome:"/>
+            <TextField fx:id="campoNome" promptText="Nome do produto"/>
+
+            <Label text="Descrição:"/>
+            <TextArea fx:id="campoDescricao" prefRowCount="2" wrapText="true"/>
+
+            <Label text="Categoria:"/>
+            <TextField fx:id="campoCategoria" promptText="Ex: Periféricos"/>
+
+            <Label text="Preço (R$):"/>
+            <TextField fx:id="campoPreco" promptText="Ex: 99.90"/>
+
+            <Label text="Quantidade:"/>
+            <TextField fx:id="campoQuantidade" promptText="Ex: 10"/>
+
+            <Label text="Quantidade mínima:"/>
+            <TextField fx:id="campoQuantidadeMinima" promptText="Ex: 5"/>
+
+            <HBox spacing="10">
+                <Button text="Cadastrar" onAction="#onCadastrar" styleClass="botao-primario"/>
+                <Button text="Atualizar" onAction="#onAtualizar" styleClass="botao-secundario"/>
+                <Button text="Remover" onAction="#onRemover" styleClass="botao-perigo"/>
+            </HBox>
+
+            <Separator/>
+
+            <Label text="Entrada de Estoque" styleClass="titulo-secao"/>
+            <Label text="Código do produto:"/>
+            <TextField fx:id="campoCodigoEntrada" promptText="Código já cadastrado"/>
+            <Label text="Quantidade a adicionar:"/>
+            <TextField fx:id="campoQuantidadeEntrada" promptText="Ex: 20"/>
+            <Button text="Dar Entrada" onAction="#onDarEntrada" styleClass="botao-primario"/>
+
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="10">
+            <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Buscar (nome ou código):"/>
+                <TextField fx:id="campoBusca" prefWidth="250"/>
+                <Button text="Buscar" onAction="#onBuscar"/>
+            </HBox>
+
+            <TableView fx:id="tabelaProdutos" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colCodigo" text="Código" prefWidth="80"/>
+                    <TableColumn fx:id="colNome" text="Nome" prefWidth="200"/>
+                    <TableColumn fx:id="colCategoria" text="Categoria" prefWidth="120"/>
+                    <TableColumn fx:id="colPreco" text="Preço" prefWidth="100"/>
+                    <TableColumn fx:id="colQuantidade" text="Qtd." prefWidth="70"/>
+                    <TableColumn fx:id="colStatus" text="Status" prefWidth="120"/>
+                </columns>
+            </TableView>
+
+        </VBox>
+    </center>
+
+</BorderPane>
