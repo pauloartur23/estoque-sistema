@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 
+
 /**
  * Controller da tela de Vendas: adiciona itens (validando estoque),
  * calcula total e, ao finalizar, grava a venda e gera a Nota Fiscal em PDF.
@@ -57,6 +58,7 @@ public class VendaController {
     }
 
     @FXML
+
     private void onAdicionarItem() {
         try {
             String codigo = campoCodigoProduto.getText().trim();
@@ -74,6 +76,8 @@ public class VendaController {
             AlertUtil.aviso("Produto não encontrado", e.getMessage());
         } catch (EstoqueInsuficienteException e) {
             AlertUtil.aviso("Estoque insuficiente", e.getMessage());
+        } catch (SQLException e) {
+            AlertUtil.erro("Erro no banco de dados", e.getMessage());
         }
     }
 
