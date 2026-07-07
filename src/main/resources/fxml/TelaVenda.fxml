@@ -1,14 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
+<BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="$CONTROLLER_NAME$"
-            prefHeight="400.0" prefWidth="600.0" >
+            fx:controller="com.estoque.controller.VendaController">
 
-</AnchorPane>
+    <top>
+        <VBox spacing="10" styleClass="painel-formulario">
+            <padding><Insets top="20" bottom="10" left="20" right="20"/></padding>
+
+            <Label text="Registrar Venda" styleClass="titulo-secao"/>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Código do produto:"/>
+                <TextField fx:id="campoCodigoProduto" prefWidth="120"/>
+
+                <Label text="Quantidade:"/>
+                <TextField fx:id="campoQuantidade" prefWidth="80"/>
+
+                <Button text="Adicionar Item" onAction="#onAdicionarItem" styleClass="botao-primario"/>
+                <Button text="Remover Item" onAction="#onRemoverItem" styleClass="botao-perigo"/>
+            </HBox>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Cliente:"/>
+                <TextField fx:id="campoNomeCliente" prefWidth="200" promptText="Consumidor Final"/>
+
+                <Label text="Forma de pagamento:"/>
+                <ComboBox fx:id="comboFormaPagamento" prefWidth="180"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <TableView fx:id="tabelaItens">
+            <padding><Insets top="10" bottom="10" left="20" right="20"/></padding>
+            <columns>
+                <TableColumn fx:id="colCodigo" text="Código" prefWidth="80"/>
+                <TableColumn fx:id="colProduto" text="Produto" prefWidth="220"/>
+                <TableColumn fx:id="colQuantidade" text="Qtd." prefWidth="70"/>
+                <TableColumn fx:id="colPrecoUnitario" text="Preço Unit." prefWidth="120"/>
+                <TableColumn fx:id="colSubtotal" text="Subtotal" prefWidth="120"/>
+            </columns>
+        </TableView>
+    </center>
+
+    <bottom>
+        <HBox spacing="20" alignment="CENTER_RIGHT" styleClass="rodape-venda">
+            <padding><Insets top="15" bottom="15" left="20" right="20"/></padding>
+            <Label fx:id="labelTotal" text="Total: R\$ 0.00" styleClass="label-total"/>
+            <Button text="Cancelar Venda" onAction="#onCancelarVenda" styleClass="botao-perigo"/>
+            <Button text="Finalizar Venda e Gerar Nota Fiscal" onAction="#onFinalizarVenda" styleClass="botao-primario"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>
