@@ -12,19 +12,22 @@ import java.util.List;
 public class Venda {
 
     private int id;
+    private Cliente cliente;
     private LocalDateTime dataVenda;
     private BigDecimal valorTotal;
+    private BigDecimal desconto;
     private String formaPagamento;
     private String nomeCliente;
+    private String observacoes;
     private List<ItemVenda> itens;
 
     public Venda() {
         this.itens = new ArrayList<>();
         this.valorTotal = BigDecimal.ZERO;
+        this.desconto = BigDecimal.ZERO;
         this.nomeCliente = "Consumidor Final";
     }
 
-    /** Adiciona um item e recalcula o valor total da venda. */
     public void adicionarItem(ItemVenda item) {
         this.itens.add(item);
         recalcularTotal();
@@ -36,9 +39,10 @@ public class Venda {
     }
 
     private void recalcularTotal() {
-        this.valorTotal = itens.stream()
+        BigDecimal subtotalItens = itens.stream()
                 .map(ItemVenda::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        this.valorTotal = subtotalItens.subtract(desconto == null ? BigDecimal.ZERO : desconto);
     }
 
     public int getId() {
@@ -47,6 +51,14 @@ public class Venda {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
     }
 
     public LocalDateTime getDataVenda() {
@@ -65,6 +77,15 @@ public class Venda {
         this.valorTotal = valorTotal;
     }
 
+    public BigDecimal getDesconto() {
+        return desconto;
+    }
+
+    public void setDesconto(BigDecimal desconto) {
+        this.desconto = desconto;
+        recalcularTotal();
+    }
+
     public String getFormaPagamento() {
         return formaPagamento;
     }
@@ -79,6 +100,14 @@ public class Venda {
 
     public void setNomeCliente(String nomeCliente) {
         this.nomeCliente = nomeCliente;
+    }
+
+    public String getObservacoes() {
+        return observacoes;
+    }
+
+    public void setObservacoes(String observacoes) {
+        this.observacoes = observacoes;
     }
 
     public List<ItemVenda> getItens() {

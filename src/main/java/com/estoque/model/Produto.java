@@ -13,31 +13,50 @@ public class Produto {
     private String codigo;
     private String nome;
     private String descricao;
-    private String categoria;
+    private Categoria categoria;
+    private Marca marca;
+    private Fornecedor fornecedor;
     private BigDecimal preco;
+    private BigDecimal custo;
     private int quantidade;
     private int quantidadeMinima;
+    private String imagemPath;
     private LocalDateTime dataCadastro;
     private boolean ativo;
 
     public Produto() {
+        this.custo = BigDecimal.ZERO;
     }
 
-    public Produto(String codigo, String nome, String descricao, String categoria,
-                   BigDecimal preco, int quantidade, int quantidadeMinima) {
+    public Produto(String codigo, String nome, String descricao, BigDecimal preco,
+                   int quantidade, int quantidadeMinima) {
         this.codigo = codigo;
         this.nome = nome;
         this.descricao = descricao;
-        this.categoria = categoria;
         this.preco = preco;
         this.quantidade = quantidade;
         this.quantidadeMinima = quantidadeMinima;
+        this.custo = BigDecimal.ZERO;
         this.ativo = true;
     }
 
-    /** Regra de negócio: indica se o produto está abaixo do estoque mínimo. */
     public boolean isEstoqueBaixo() {
         return quantidade <= quantidadeMinima;
+    }
+
+    public boolean temImagem() {
+        return imagemPath != null && !imagemPath.isBlank();
+    }
+
+    /** Margem de lucro unitária (preço de venda - custo). */
+    public BigDecimal getMargemLucro() {
+        BigDecimal c = custo == null ? BigDecimal.ZERO : custo;
+        return preco.subtract(c);
+    }
+
+    /** Valor total do estoque desse produto (preço x quantidade). */
+    public BigDecimal getValorEmEstoque() {
+        return preco.multiply(BigDecimal.valueOf(quantidade));
     }
 
     // ----- Getters e Setters -----
@@ -74,12 +93,28 @@ public class Produto {
         this.descricao = descricao;
     }
 
-    public String getCategoria() {
+    public Categoria getCategoria() {
         return categoria;
     }
 
-    public void setCategoria(String categoria) {
+    public void setCategoria(Categoria categoria) {
         this.categoria = categoria;
+    }
+
+    public Marca getMarca() {
+        return marca;
+    }
+
+    public void setMarca(Marca marca) {
+        this.marca = marca;
+    }
+
+    public Fornecedor getFornecedor() {
+        return fornecedor;
+    }
+
+    public void setFornecedor(Fornecedor fornecedor) {
+        this.fornecedor = fornecedor;
     }
 
     public BigDecimal getPreco() {
@@ -88,6 +123,14 @@ public class Produto {
 
     public void setPreco(BigDecimal preco) {
         this.preco = preco;
+    }
+
+    public BigDecimal getCusto() {
+        return custo;
+    }
+
+    public void setCusto(BigDecimal custo) {
+        this.custo = custo;
     }
 
     public int getQuantidade() {
@@ -104,6 +147,14 @@ public class Produto {
 
     public void setQuantidadeMinima(int quantidadeMinima) {
         this.quantidadeMinima = quantidadeMinima;
+    }
+
+    public String getImagemPath() {
+        return imagemPath;
+    }
+
+    public void setImagemPath(String imagemPath) {
+        this.imagemPath = imagemPath;
     }
 
     public LocalDateTime getDataCadastro() {
