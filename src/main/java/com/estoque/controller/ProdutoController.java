@@ -2,45 +2,56 @@ package com.estoque.controller;
 
 import com.estoque.exception.CodigoDuplicadoException;
 import com.estoque.exception.ProdutoNaoEncontradoException;
+import com.estoque.model.Categoria;
+import com.estoque.model.Fornecedor;
+import com.estoque.model.Marca;
 import com.estoque.model.Produto;
-import com.estoque.service.ProdutoService;
+import com.estoque.service.*;
 import com.estoque.util.AlertUtil;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 
-/**
- * Controller da tela de Produtos: cadastro (entrada), busca por código,
- * entrada adicional de estoque e listagem.
- */
 public class ProdutoController {
 
-    // ---- Formulário de cadastro ----
     @FXML private TextField campoCodigo;
     @FXML private TextField campoNome;
     @FXML private TextArea campoDescricao;
-    @FXML private TextField campoCategoria;
+    @FXML private ComboBox<Categoria> comboCategoria;
+    @FXML private ComboBox<Marca> comboMarca;
+    @FXML private ComboBox<Fornecedor> comboFornecedor;
     @FXML private TextField campoPreco;
+    @FXML private TextField campoCusto;
     @FXML private TextField campoQuantidade;
     @FXML private TextField campoQuantidadeMinima;
 
-    // ---- Entrada de estoque adicional ----
+    @FXML private ImageView previewImagem;
+    @FXML private javafx.scene.control.Label labelSemImagem;
+
     @FXML private TextField campoCodigoEntrada;
     @FXML private TextField campoQuantidadeEntrada;
 
-    // ---- Busca ----
     @FXML private TextField campoBusca;
 
-    // ---- Tabela ----
     @FXML private TableView<Produto> tabelaProdutos;
+    @FXML private TableColumn<Produto, Produto> colFoto;
     @FXML private TableColumn<Produto, String> colCodigo;
     @FXML private TableColumn<Produto, String> colNome;
     @FXML private TableColumn<Produto, String> colCategoria;
@@ -49,13 +60,43 @@ public class ProdutoController {
     @FXML private TableColumn<Produto, String> colStatus;
 
     private final ProdutoService produtoService = new ProdutoService();
+    private final CategoriaService categoriaService = new CategoriaService();
+    private final MarcaService marcaService = new MarcaService();
+    private final FornecedorService fornecedorService = new FornecedorService();
+    private final ImagemService imagemService = new ImagemService();
+
+    private String caminhoImagemSelecionada;
 
     @FXML
     public void initialize() {
+        carregarCombos();
+
+        colFoto.setCellValueFactory(dados -> new SimpleObjectProperty<>(dados.getValue()));
+        colFoto.setCellFactory(coluna -> new TableCell<>() {
+            private final ImageView imageView = new ImageView();
+            {
+                imageView.setFitWidth(36);
+                imageView.setFitHeight(36);
+                imageView.setPreserveRatio(true);
+            }
+
+            @Override
+            protected void updateItem(Produto produto, boolean vazio) {
+                super.updateItem(produto, vazio);
+                if (vazio || produto == null || !produto.temImagem()) {
+                    setGraphic(null);
+                } else {
+                    Image imagem = imagemService.carregarParaPreview(produto.getImagemPath(), 36, 36);
+                    imageView.setImage(imagem);
+                    setGraphic(imageView);
+                }
+            }
+        });
+
         colCodigo.setCellValueFactory(dados -> new SimpleStringProperty(dados.getValue().getCodigo()));
         colNome.setCellValueFactory(dados -> new SimpleStringProperty(dados.getValue().getNome()));
         colCategoria.setCellValueFactory(dados -> new SimpleStringProperty(
-                dados.getValue().getCategoria() == null ? "-" : dados.getValue().getCategoria()));
+                dados.getValue().getCategoria() == null ? "-" : dados.getValue().getCategoria().getNome()));
         colPreco.setCellValueFactory(dados -> new SimpleStringProperty(
                 "R$ " + dados.getValue().getPreco().toString()));
         colQuantidade.setCellValueFactory(dados -> new SimpleStringProperty(
@@ -65,18 +106,60 @@ public class ProdutoController {
 
         carregarTabela();
 
-        // ao clicar em uma linha, joga os dados para o formulário (facilita edição futura)
         tabelaProdutos.getSelectionModel().selectedItemProperty().addListener((obs, antigo, novo) -> {
             if (novo != null) {
                 campoCodigo.setText(novo.getCodigo());
                 campoNome.setText(novo.getNome());
                 campoDescricao.setText(novo.getDescricao());
-                campoCategoria.setText(novo.getCategoria());
+                comboCategoria.setValue(novo.getCategoria());
+                comboMarca.setValue(novo.getMarca());
+                comboFornecedor.setValue(novo.getFornecedor());
                 campoPreco.setText(novo.getPreco().toString());
+                campoCusto.setText(novo.getCusto() != null ? novo.getCusto().toString() : "0");
                 campoQuantidade.setText(String.valueOf(novo.getQuantidade()));
                 campoQuantidadeMinima.setText(String.valueOf(novo.getQuantidadeMinima()));
+
+                caminhoImagemSelecionada = novo.getImagemPath();
+                exibirPreview(caminhoImagemSelecionada);
             }
         });
+    }
+
+    private void carregarCombos() {
+        try {
+            comboCategoria.setItems(FXCollections.observableArrayList(categoriaService.listarTodas()));
+            comboMarca.setItems(FXCollections.observableArrayList(marcaService.listarTodas()));
+            comboFornecedor.setItems(FXCollections.observableArrayList(fornecedorService.listarTodos()));
+        } catch (SQLException e) {
+            AlertUtil.erro("Erro no banco de dados", "Não foi possível carregar categorias/marcas/fornecedores.\n" + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void onEscolherImagem() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Selecionar foto do produto");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Imagens", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp"));
+
+        Window janela = previewImagem.getScene().getWindow();
+        File arquivo = fileChooser.showOpenDialog(janela);
+        if (arquivo == null) return;
+
+        try {
+            String codigoBase = campoCodigo.getText().isBlank() ? "produto" : campoCodigo.getText().trim();
+            caminhoImagemSelecionada = imagemService.salvar(codigoBase, arquivo);
+            exibirPreview(caminhoImagemSelecionada);
+        } catch (IOException e) {
+            AlertUtil.erro("Erro ao carregar imagem", "Não foi possível salvar a imagem selecionada.\n" + e.getMessage());
+        }
+    }
+
+    private void exibirPreview(String caminho) {
+        Image imagem = imagemService.carregarParaPreview(caminho, 140, 140);
+        previewImagem.setImage(imagem);
+        labelSemImagem.setVisible(imagem == null);
+        previewImagem.setVisible(imagem != null);
     }
 
     @FXML
@@ -85,20 +168,22 @@ public class ProdutoController {
             String codigo = campoCodigo.getText().trim();
             String nome = campoNome.getText().trim();
             String descricao = campoDescricao.getText();
-            String categoria = campoCategoria.getText().trim();
             BigDecimal preco = new BigDecimal(campoPreco.getText().trim().replace(",", "."));
+            BigDecimal custo = campoCusto.getText().isBlank()
+                    ? BigDecimal.ZERO : new BigDecimal(campoCusto.getText().trim().replace(",", "."));
             int quantidade = Integer.parseInt(campoQuantidade.getText().trim());
             int quantidadeMinima = campoQuantidadeMinima.getText().isBlank()
                     ? 0 : Integer.parseInt(campoQuantidadeMinima.getText().trim());
 
-            produtoService.cadastrar(codigo, nome, descricao, categoria, preco, quantidade, quantidadeMinima);
+            produtoService.cadastrar(codigo, nome, descricao, comboCategoria.getValue(), comboMarca.getValue(),
+                    comboFornecedor.getValue(), preco, custo, quantidade, quantidadeMinima, caminhoImagemSelecionada);
 
             AlertUtil.info("Sucesso", "Produto cadastrado com sucesso!");
             limparCampos();
             carregarTabela();
 
         } catch (NumberFormatException e) {
-            AlertUtil.erro("Erro de validação", "Verifique se o preço e as quantidades foram preenchidos corretamente (use números).");
+            AlertUtil.erro("Erro de validação", "Verifique se o preço, custo e quantidades foram preenchidos corretamente (use números).");
         } catch (CodigoDuplicadoException e) {
             AlertUtil.aviso("Código duplicado", e.getMessage());
         } catch (IllegalArgumentException e) {
@@ -141,10 +226,15 @@ public class ProdutoController {
         try {
             selecionado.setNome(campoNome.getText().trim());
             selecionado.setDescricao(campoDescricao.getText());
-            selecionado.setCategoria(campoCategoria.getText().trim());
+            selecionado.setCategoria(comboCategoria.getValue());
+            selecionado.setMarca(comboMarca.getValue());
+            selecionado.setFornecedor(comboFornecedor.getValue());
             selecionado.setPreco(new BigDecimal(campoPreco.getText().trim().replace(",", ".")));
+            selecionado.setCusto(campoCusto.getText().isBlank()
+                    ? BigDecimal.ZERO : new BigDecimal(campoCusto.getText().trim().replace(",", ".")));
             selecionado.setQuantidade(Integer.parseInt(campoQuantidade.getText().trim()));
             selecionado.setQuantidadeMinima(Integer.parseInt(campoQuantidadeMinima.getText().trim()));
+            selecionado.setImagemPath(caminhoImagemSelecionada);
 
             produtoService.atualizar(selecionado);
             AlertUtil.info("Sucesso", "Produto atualizado com sucesso!");
@@ -197,9 +287,14 @@ public class ProdutoController {
         campoCodigo.clear();
         campoNome.clear();
         campoDescricao.clear();
-        campoCategoria.clear();
+        comboCategoria.setValue(null);
+        comboMarca.setValue(null);
+        comboFornecedor.setValue(null);
         campoPreco.clear();
+        campoCusto.clear();
         campoQuantidade.clear();
         campoQuantidadeMinima.clear();
+        caminhoImagemSelecionada = null;
+        exibirPreview(null);
     }
 }

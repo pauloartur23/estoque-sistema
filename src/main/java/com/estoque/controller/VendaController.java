@@ -2,32 +2,36 @@ package com.estoque.controller;
 
 import com.estoque.exception.EstoqueInsuficienteException;
 import com.estoque.exception.ProdutoNaoEncontradoException;
+import com.estoque.model.Cliente;
 import com.estoque.model.ItemVenda;
 import com.estoque.model.Venda;
+import com.estoque.service.ClienteService;
 import com.estoque.service.NotaFiscalService;
 import com.estoque.service.VendaService;
 import com.estoque.util.AlertUtil;
+import com.estoque.util.IconFactory;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 
-
-/**
- * Controller da tela de Vendas: adiciona itens (validando estoque),
- * calcula total e, ao finalizar, grava a venda e gera a Nota Fiscal em PDF.
- */
 public class VendaController {
 
     @FXML private TextField campoCodigoProduto;
     @FXML private TextField campoQuantidade;
-    @FXML private TextField campoNomeCliente;
-    @FXML private ComboBox<String> comboFormaPagamento;
+    @FXML private ComboBox<Cliente> comboCliente;
+    @FXML private TextField campoDesconto;
+    @FXML private HBox containerFormasPagamento;
+    @FXML private HBox containerBandeiras;
+    @FXML private TextArea campoObservacoes;
 
     @FXML private TableView<ItemVenda> tabelaItens;
     @FXML private TableColumn<ItemVenda, String> colCodigo;
@@ -40,13 +44,31 @@ public class VendaController {
 
     private final VendaService vendaService = new VendaService();
     private final NotaFiscalService notaFiscalService = new NotaFiscalService();
+    private final ClienteService clienteService = new ClienteService();
 
+    private final ToggleGroup grupoFormaPagamento = new ToggleGroup();
     private Venda vendaAtual = new Venda();
 
     @FXML
     public void initialize() {
-        comboFormaPagamento.setItems(FXCollections.observableArrayList(
-                "Dinheiro", "Cartão de Débito", "Cartão de Crédito", "PIX"));
+        montarBotoesFormaPagamento();
+        montarBandeirasAceitas();
+
+        // Impede que o usuário "desmarque" a forma de pagamento clicando
+        // duas vezes no mesmo botão — sempre mantém uma opção selecionada
+        // depois da primeira escolha. Isso evita a venda ficar sem forma
+        // de pagamento sem o usuário perceber.
+        grupoFormaPagamento.selectedToggleProperty().addListener((obs, antigo, novo) -> {
+            if (novo == null && antigo != null) {
+                grupoFormaPagamento.selectToggle(antigo);
+            }
+        });
+
+        try {
+            comboCliente.setItems(FXCollections.observableArrayList(clienteService.listarTodos()));
+        } catch (SQLException e) {
+            AlertUtil.erro("Erro no banco de dados", "Não foi possível carregar os clientes.\n" + e.getMessage());
+        }
 
         colCodigo.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getProduto().getCodigo()));
         colProduto.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getProduto().getNome()));
@@ -57,8 +79,41 @@ public class VendaController {
         atualizarTabelaETotal();
     }
 
-    @FXML
+    /** Monta os botões de forma de pagamento com ícone real (Dinheiro, PIX, Débito, Crédito). */
+    private void montarBotoesFormaPagamento() {
+        containerFormasPagamento.getChildren().addAll(
+                criarBotaoFormaPagamento("Dinheiro", "dinheiro", "#2ECC71"),
+                criarBotaoFormaPagamento("PIX", "pix", "#2ECC71"),
+                criarBotaoFormaPagamento("Cartão de Débito", "maquininha-cartao", "#4FA3F7"),
+                criarBotaoFormaPagamento("Cartão de Crédito", "maquininha-cartao", "#9B59B6")
+        );
+    }
 
+    private ToggleButton criarBotaoFormaPagamento(String rotulo, String icone, String corHex) {
+        ToggleButton botao = new ToggleButton(rotulo);
+        botao.setGraphic(IconFactory.criar(icone, 20, Color.web(corHex)));
+        botao.setContentDisplay(ContentDisplay.TOP);
+        botao.setToggleGroup(grupoFormaPagamento);
+        botao.setUserData(rotulo);
+        botao.getStyleClass().add("botao-forma-pagamento");
+        botao.setMinWidth(110);
+        return botao;
+    }
+
+    /** Fileira decorativa com as logos das bandeiras aceitas (Visa, Mastercard, Elo, Amex, Hipercard, Boleto). */
+    private void montarBandeirasAceitas() {
+        String[][] bandeiras = {
+                {"visa", "#1A1F71"}, {"mastercard", "#EB001B"}, {"elo", "#000000"},
+                {"amex", "#2E77BC"}, {"hipercard", "#822124"}, {"boleto", "#C9CCD1"}
+        };
+        for (String[] bandeira : bandeiras) {
+            Label logo = new Label();
+            logo.setGraphic(IconFactory.criar(bandeira[0], 26, Color.web(bandeira[1])));
+            containerBandeiras.getChildren().add(logo);
+        }
+    }
+
+    @FXML
     private void onAdicionarItem() {
         try {
             String codigo = campoCodigoProduto.getText().trim();
@@ -93,12 +148,25 @@ public class VendaController {
     }
 
     @FXML
+    private void onAplicarDesconto() {
+        try {
+            String texto = campoDesconto.getText().trim();
+            BigDecimal desconto = texto.isBlank() ? BigDecimal.ZERO : new BigDecimal(texto.replace(",", "."));
+            vendaAtual.setDesconto(desconto);
+            atualizarTabelaETotal();
+        } catch (NumberFormatException e) {
+            AlertUtil.erro("Erro de validação", "Informe um valor de desconto numérico válido.");
+        }
+    }
+
+    @FXML
     private void onFinalizarVenda() {
         if (vendaAtual.getItens().isEmpty()) {
             AlertUtil.aviso("Venda vazia", "Adicione ao menos um item antes de finalizar a venda.");
             return;
         }
-        if (comboFormaPagamento.getValue() == null) {
+        Toggle selecionado = grupoFormaPagamento.getSelectedToggle();
+        if (selecionado == null) {
             AlertUtil.aviso("Forma de pagamento", "Selecione a forma de pagamento.");
             return;
         }
@@ -108,10 +176,10 @@ public class VendaController {
         if (!confirmado) return;
 
         try {
-            vendaAtual.setFormaPagamento(comboFormaPagamento.getValue());
-            if (!campoNomeCliente.getText().isBlank()) {
-                vendaAtual.setNomeCliente(campoNomeCliente.getText().trim());
-            }
+            vendaAtual.setFormaPagamento((String) selecionado.getUserData());
+            vendaAtual.setCliente(comboCliente.getValue());
+            vendaAtual.setNomeCliente(comboCliente.getValue() != null ? comboCliente.getValue().getNome() : "Consumidor Final");
+            vendaAtual.setObservacoes(campoObservacoes.getText());
             vendaAtual.setDataVenda(java.time.LocalDateTime.now());
 
             vendaService.finalizarVenda(vendaAtual);
@@ -121,10 +189,11 @@ public class VendaController {
             AlertUtil.info("Venda concluída",
                     "Venda registrada com sucesso!\nNota fiscal gerada em: " + pdf.getAbsolutePath());
 
-            // reinicia a tela para uma nova venda
             vendaAtual = new Venda();
-            campoNomeCliente.clear();
-            comboFormaPagamento.setValue(null);
+            comboCliente.setValue(null);
+            campoDesconto.setText("0");
+            campoObservacoes.clear();
+            grupoFormaPagamento.selectToggle(null);
             atualizarTabelaETotal();
 
         } catch (SQLException e) {
@@ -147,6 +216,8 @@ public class VendaController {
     private void atualizarTabelaETotal() {
         ObservableList<ItemVenda> lista = FXCollections.observableArrayList(vendaAtual.getItens());
         tabelaItens.setItems(lista);
-        labelTotal.setText("Total: R$ " + vendaAtual.getValorTotal());
+        labelTotal.setText("Total: R$ " + vendaAtual.getValorTotal()
+                + (vendaAtual.getDesconto() != null && vendaAtual.getDesconto().compareTo(BigDecimal.ZERO) > 0
+                ? "  (desconto: R$ " + vendaAtual.getDesconto() + ")" : ""));
     }
 }
