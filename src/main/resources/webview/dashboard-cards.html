@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="swiper/swiper-bundle.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            background: #0E1015;
+            overflow: hidden;
+            font-family: "Segoe UI", sans-serif;
+            color: #E4E6EB;
+        }
+
+        .grid-topo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            height: 260px;
+        }
+
+        .card-dash {
+            background: #16181D;
+            border: 1px solid #2A2D34;
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+        }
+
+        .card-titulo {
+            font-size: 13px;
+            font-weight: 700;
+            color: #FFFFFF;
+            border-bottom: 2px solid #FF6A00;
+            padding-bottom: 6px;
+        }
+
+        /* ---- Gráfico de linha ---- */
+        .legenda-linha {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+            color: #9CA3AF;
+        }
+        .legenda-item { display: flex; align-items: center; gap: 5px; }
+        .ponto { width: 8px; height: 8px; border-radius: 50%; }
+        .ponto-entrada { background: #2ECC71; }
+        .ponto-saida { background: #E74C3C; }
+
+        /* ---- Rosca ---- */
+        .rosca-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .rosca-legenda {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 11px;
+            flex: 1;
+        }
+        .rosca-legenda-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #C9CCD1;
+        }
+        .rosca-cor {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        /* ---- Tabelas ---- */
+        .tabela-scroll {
+            flex: 1;
+            overflow-y: auto;
+        }
+        table.tabela-dash {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        table.tabela-dash th {
+            text-align: left;
+            color: #9CA3AF;
+            font-weight: 600;
+            padding: 6px 8px;
+            border-bottom: 1px solid #2A2D34;
+            position: sticky;
+            top: 0;
+            background: #16181D;
+        }
+        table.tabela-dash td {
+            padding: 7px 8px;
+            border-bottom: 1px solid #22252B;
+            color: #E4E6EB;
+        }
+        .badge-tipo {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+        .badge-ENTRADA { background: #1B3A24; color: #2ECC71; }
+        .badge-SAIDA   { background: #3A1B1B; color: #E74C3C; }
+        .badge-VENDA   { background: #16233A; color: #4FA3F7; }
+        .badge-TRANSFERENCIA { background: #332B12; color: #F5B942; }
+
+        .badge-estoque {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: #3A1B1B;
+            color: #E74C3C;
+            white-space: nowrap;
+        }
+
+        .vazio {
+            text-align: center;
+            color: #6B7280;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        .grid-baixo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            height: 220px;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="grid-topo">
+    <div class="card-dash">
+        <div class="card-titulo">📈 Movimentações do Período (15 dias)</div>
+        <div class="legenda-linha">
+            <div class="legenda-item"><div class="ponto ponto-entrada"></div> Entradas</div>
+            <div class="legenda-item"><div class="ponto ponto-saida"></div> Saídas</div>
+        </div>
+        <div id="grafico-linha" style="flex:1"></div>
+    </div>
+
+    <div class="card-dash">
+        <div class="card-titulo">🥧 Distribuição por Categoria</div>
+        <div class="rosca-container" id="grafico-rosca"></div>
+    </div>
+</div>
+
+<div class="grid-baixo">
+    <div class="card-dash">
+        <div class="card-titulo">⚠️ Produtos com Estoque Baixo</div>
+        <div class="tabela-scroll">
+            <table class="tabela-dash" id="tabela-estoque-baixo">
+                <thead><tr><th>Produto</th><th>SKU</th><th>Estoque</th><th>Mínimo</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card-dash">
+        <div class="card-titulo">🕓 Últimas Movimentações</div>
+        <div class="tabela-scroll">
+            <table class="tabela-dash" id="tabela-movimentacoes">
+                <thead><tr><th>Tipo</th><th>Produto</th><th>Qtd.</th><th>Data</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="swiper/swiper-bundle.min.js"></script>
+<script>
+    const CORES_CATEGORIA = ['#4FA3F7', '#2ECC71', '#F5B942', '#E74C3C', '#9B59B6', '#1ABC9C', '#E67E22'];
+
+    function atualizarDashboard(dados) {
+        desenharGraficoLinha(dados.movLabels, dados.movEntradas, dados.movSaidas);
+        desenharGraficoRosca(dados.categoriaLabels, dados.categoriaValores);
+        preencherTabelaEstoqueBaixo(dados.estoqueBaixo);
+        preencherTabelaMovimentacoes(dados.ultimasMovimentacoes);
+    }
+
+    function desenharGraficoLinha(labels, entradas, saidas) {
+        const container = document.getElementById('grafico-linha');
+        const largura = container.clientWidth || 500;
+        const altura = container.clientHeight || 140;
+        const padding = 20;
+
+        const todosValores = [...entradas.map(Number), ...saidas.map(Number)];
+        const maxValor = Math.max(...todosValores, 1);
+
+        const pontosX = labels.map((_, i) => padding + (i * (largura - padding * 2) / (labels.length - 1)));
+
+        function gerarPath(valores) {
+            return valores.map((v, i) => {
+                const x = pontosX[i];
+                const y = altura - padding - ((Number(v) / maxValor) * (altura - padding * 2));
+                return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+            }).join(' ');
+        }
+
+        const pathEntradas = gerarPath(entradas);
+        const pathSaidas = gerarPath(saidas);
+
+        let labelsHtml = '';
+        labels.forEach((l, i) => {
+            if (i % 2 === 0 || labels.length <= 8) {
+                labelsHtml += `<text x="${pontosX[i]}" y="${altura - 2}" font-size="9" fill="#6B7280" text-anchor="middle">${l}</text>`;
+            }
+        });
+
+        container.innerHTML = `
+            <svg width="100%" height="100%" viewBox="0 0 ${largura} ${altura}">
+                <path d="${pathEntradas}" fill="none" stroke="#2ECC71" stroke-width="2"/>
+                <path d="${pathSaidas}" fill="none" stroke="#E74C3C" stroke-width="2"/>
+                ${labelsHtml}
+            </svg>
+        `;
+    }
+
+    function desenharGraficoRosca(labels, valores) {
+        const container = document.getElementById('grafico-rosca');
+        const total = valores.reduce((a, b) => a + Number(b), 0) || 1;
+
+        const raio = 45;
+        const centroX = 55, centroY = 55;
+        const espessura = 18;
+        let anguloAtual = -90;
+
+        let arcos = '';
+        labels.forEach((label, i) => {
+            const valor = Number(valores[i]);
+            const fracao = valor / total;
+            const anguloFim = anguloAtual + fracao * 360;
+
+            const x1 = centroX + raio * Math.cos(anguloAtual * Math.PI / 180);
+            const y1 = centroY + raio * Math.sin(anguloAtual * Math.PI / 180);
+            const x2 = centroX + raio * Math.cos(anguloFim * Math.PI / 180);
+            const y2 = centroY + raio * Math.sin(anguloFim * Math.PI / 180);
+            const largeArc = (anguloFim - anguloAtual) > 180 ? 1 : 0;
+            const cor = CORES_CATEGORIA[i % CORES_CATEGORIA.length];
+
+            arcos += `<path d="M ${x1} ${y1} A ${raio} ${raio} 0 ${largeArc} 1 ${x2} ${y2}"
+                        fill="none" stroke="${cor}" stroke-width="${espessura}"/>`;
+
+            anguloAtual = anguloFim;
+        });
+
+        let legenda = '';
+        labels.forEach((label, i) => {
+            const cor = CORES_CATEGORIA[i % CORES_CATEGORIA.length];
+            const pct = ((Number(valores[i]) / total) * 100).toFixed(0);
+            legenda += `
+                <div class="rosca-legenda-item">
+                    <div class="rosca-cor" style="background:${cor}"></div>
+                    <span>${label} — ${pct}%</span>
+                </div>`;
+        });
+
+        container.innerHTML = `
+            <svg width="110" height="110" viewBox="0 0 110 110">${arcos}</svg>
+            <div class="rosca-legenda">${legenda}</div>
+        `;
+    }
+
+    function preencherTabelaEstoqueBaixo(produtos) {
+        const tbody = document.querySelector('#tabela-estoque-baixo tbody');
+        tbody.innerHTML = '';
+
+        if (!produtos || produtos.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4"><div class="vazio">Nenhum produto com estoque baixo. 🎉</div></td></tr>`;
+            return;
+        }
+
+        produtos.forEach(p => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${p.nome}</td>
+                    <td>${p.codigo}</td>
+                    <td><span class="badge-estoque">${p.quantidade} un.</span></td>
+                    <td>${p.quantidadeMinima}</td>
+                </tr>`;
+        });
+    }
+
+    function preencherTabelaMovimentacoes(movimentacoes) {
+        const tbody = document.querySelector('#tabela-movimentacoes tbody');
+        tbody.innerHTML = '';
+
+        if (!movimentacoes || movimentacoes.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4"><div class="vazio">Nenhuma movimentação registrada ainda.</div></td></tr>`;
+            return;
+        }
+
+        const rotulos = { ENTRADA: 'Entrada', SAIDA: 'Saída', VENDA: 'Venda', TRANSFERENCIA: 'Transf.' };
+
+        movimentacoes.forEach(m => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><span class="badge-tipo badge-${m.tipo}">${rotulos[m.tipo] || m.tipo}</span></td>
+                    <td>${m.descricao}</td>
+                    <td>${m.quantidade}</td>
+                    <td>${m.data}</td>
+                </tr>`;
+        });
+    }
+</script>
+</body>
+</html>
