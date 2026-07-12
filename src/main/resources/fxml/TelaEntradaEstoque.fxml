@@ -1,14 +1,91 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
+<BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="$CONTROLLER_NAME$"
-            prefHeight="400.0" prefWidth="600.0" >
+            fx:controller="com.estoque.controller.EntradaEstoqueController"
+            styleClass="app-shell">
 
-</AnchorPane>
+    <top>
+        <VBox>
+            <HBox alignment="CENTER_LEFT" styleClass="janela-topbar">
+                <padding><Insets top="16" bottom="16" left="25" right="25"/></padding>
+                <Label text="⬇  Entrada de Produtos" styleClass="janela-titulo"/>
+            </HBox>
+            <Region styleClass="faixa-laranja"/>
+
+            <VBox spacing="12" styleClass="fundo-area-central">
+                <padding><Insets top="16" bottom="16" left="20" right="20"/></padding>
+
+                <VBox spacing="10" styleClass="card">
+                    <padding><Insets top="16" bottom="16" left="16" right="16"/></padding>
+
+                    <Label text="Dados da Entrada" styleClass="titulo-secao"/>
+
+                    <HBox spacing="20">
+                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                            <Label text="Fornecedor *" styleClass="rotulo-campo"/>
+                            <ComboBox fx:id="comboFornecedor" maxWidth="Infinity" promptText="Selecione o fornecedor"/>
+                        </VBox>
+                        <VBox spacing="4">
+                            <Label text="Número da Nota" styleClass="rotulo-campo"/>
+                            <TextField fx:id="campoNumeroNota" prefWidth="150"/>
+                        </VBox>
+                    </HBox>
+
+                    <Label text="Observações" styleClass="rotulo-campo"/>
+                    <TextArea fx:id="campoObservacoes" prefRowCount="2" wrapText="true"/>
+
+                    <Separator styleClass="separator-orange"/>
+
+                    <Label text="Adicionar produto à entrada" styleClass="titulo-secao"/>
+                    <HBox spacing="10" alignment="BOTTOM_LEFT">
+                        <VBox spacing="4">
+                            <Label text="Código do produto" styleClass="rotulo-campo"/>
+                            <TextField fx:id="campoCodigoProduto" prefWidth="140"/>
+                        </VBox>
+                        <VBox spacing="4">
+                            <Label text="Quantidade" styleClass="rotulo-campo"/>
+                            <TextField fx:id="campoQuantidade" prefWidth="90"/>
+                        </VBox>
+                        <VBox spacing="4">
+                            <Label text="Custo Unitário (R\$)" styleClass="rotulo-campo"/>
+                            <TextField fx:id="campoCustoUnitario" prefWidth="120"/>
+                        </VBox>
+                        <Button text="+ Adicionar" onAction="#onAdicionarItem" styleClass="botao-primario"/>
+                        <Button text="Remover Item" onAction="#onRemoverItem" styleClass="botao-perigo"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="10" styleClass="fundo-area-central">
+            <padding><Insets top="0" bottom="10" left="20" right="20"/></padding>
+            <Label text="Produtos desta entrada" styleClass="titulo-secao"/>
+            <TableView fx:id="tabelaItens" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colCodigo" text="Código" prefWidth="90"/>
+                    <TableColumn fx:id="colProduto" text="Produto" prefWidth="240"/>
+                    <TableColumn fx:id="colQuantidade" text="Qtd." prefWidth="80"/>
+                    <TableColumn fx:id="colCusto" text="Custo Unit." prefWidth="120"/>
+                    <TableColumn fx:id="colSubtotal" text="Subtotal" prefWidth="120"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox spacing="20" alignment="CENTER_RIGHT" styleClass="rodape-venda">
+            <padding><Insets top="18" bottom="18" left="20" right="20"/></padding>
+            <Label fx:id="labelTotal" text="Total: R\$ 0.00" styleClass="label-total" HBox.hgrow="ALWAYS"/>
+            <Button text="Cancelar" onAction="#onCancelar" styleClass="botao-perigo"/>
+            <Button text="✔ Salvar Entrada" onAction="#onSalvarEntrada" styleClass="botao-primario"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

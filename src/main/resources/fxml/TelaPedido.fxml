@@ -1,14 +1,92 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
+<BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="$CONTROLLER_NAME$"
-            prefHeight="400.0" prefWidth="600.0" >
+            fx:controller="com.estoque.controller.PedidoController"
+            styleClass="app-shell">
 
-</AnchorPane>
+    <top>
+        <VBox>
+            <HBox alignment="CENTER_LEFT" styleClass="janela-topbar">
+                <padding><Insets top="16" bottom="16" left="25" right="25"/></padding>
+                <Label text="📋  Pedidos de Compra" styleClass="janela-titulo"/>
+            </HBox>
+            <Region styleClass="faixa-laranja"/>
+        </VBox>
+    </top>
+
+    <left>
+        <ScrollPane fitToWidth="true" styleClass="fundo-area-central">
+            <VBox spacing="10" styleClass="card" prefWidth="360">
+                <padding><Insets top="16" bottom="16" left="16" right="16"/></padding>
+
+                <Label text="Novo Pedido" styleClass="titulo-secao"/>
+
+                <Label text="Fornecedor *" styleClass="rotulo-campo"/>
+                <ComboBox fx:id="comboFornecedor" maxWidth="Infinity" promptText="Selecione o fornecedor"/>
+
+                <Label text="Observações" styleClass="rotulo-campo"/>
+                <TextArea fx:id="campoObservacoes" prefRowCount="2" wrapText="true"/>
+
+                <Separator styleClass="separator-orange"/>
+
+                <Label text="Adicionar item" styleClass="titulo-secao"/>
+                <Label text="Código do produto" styleClass="rotulo-campo"/>
+                <TextField fx:id="campoCodigoProduto"/>
+                <HBox spacing="10">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Quantidade" styleClass="rotulo-campo"/>
+                        <TextField fx:id="campoQuantidade"/>
+                    </VBox>
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Preço Unit. (R\$)" styleClass="rotulo-campo"/>
+                        <TextField fx:id="campoPrecoUnitario"/>
+                    </VBox>
+                </HBox>
+                <HBox spacing="8">
+                    <Button text="+ Adicionar" onAction="#onAdicionarItem" styleClass="botao-primario" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    <Button text="Remover" onAction="#onRemoverItem" styleClass="botao-perigo" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                </HBox>
+
+                <TableView fx:id="tabelaItensNovoPedido" prefHeight="150">
+                    <columns>
+                        <TableColumn fx:id="colCodigoItem" text="Código" prefWidth="70"/>
+                        <TableColumn fx:id="colProdutoItem" text="Produto" prefWidth="130"/>
+                        <TableColumn fx:id="colQuantidadeItem" text="Qtd." prefWidth="50"/>
+                        <TableColumn fx:id="colPrecoItem" text="Preço" prefWidth="70"/>
+                        <TableColumn fx:id="colSubtotalItem" text="Subtotal" prefWidth="80"/>
+                    </columns>
+                </TableView>
+
+                <Label fx:id="labelTotalNovoPedido" text="Total: R\$ 0.00" styleClass="label-total"/>
+                <Button text="✔ Criar Pedido" onAction="#onCriarPedido" styleClass="botao-primario" maxWidth="Infinity"/>
+            </VBox>
+        </ScrollPane>
+    </left>
+
+    <center>
+        <VBox spacing="14" styleClass="fundo-area-central">
+            <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+            <Label text="Pedidos Registrados" styleClass="titulo-secao"/>
+            <TableView fx:id="tabelaPedidos" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colFornecedor" text="Fornecedor" prefWidth="200"/>
+                    <TableColumn fx:id="colData" text="Data" prefWidth="160"/>
+                    <TableColumn fx:id="colStatus" text="Status" prefWidth="120"/>
+                    <TableColumn fx:id="colValorTotal" text="Valor Total" prefWidth="130"/>
+                </columns>
+            </TableView>
+
+            <HBox spacing="10" alignment="CENTER_RIGHT">
+                <Button text="Cancelar Pedido" onAction="#onCancelarPedido" styleClass="botao-perigo"/>
+                <Button text="Marcar como Recebido" onAction="#onMarcarComoRecebido" styleClass="botao-primario"/>
+            </HBox>
+        </VBox>
+    </center>
+
+</BorderPane>

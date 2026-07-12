@@ -3,31 +3,81 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.web.WebView?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.estoque.controller.TelaPrincipalController"
-            styleClass="tela-principal">
+            styleClass="app-shell">
+
+    <left>
+        <VBox styleClass="sidebar" prefWidth="230">
+            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="sidebar-cabecalho">
+                <padding><Insets top="18" bottom="18" left="20" right="20"/></padding>
+                <Label fx:id="logoIcone" />
+                <Label text="StockPro" styleClass="sidebar-marca"/>
+            </HBox>
+
+            <ScrollPane fitToWidth="true" styleClass="sidebar-scroll" VBox.vgrow="ALWAYS">
+                <VBox spacing="2">
+                    <padding><Insets top="10" bottom="20" left="10" right="10"/></padding>
+
+                    <Button fx:id="botaoDashboard" text="Dashboard" styleClass="sidebar-item, sidebar-item-ativo" maxWidth="Infinity" alignment="CENTER_LEFT"/>
+
+                    <Label text="ESTOQUE" styleClass="sidebar-secao"/>
+                    <Button fx:id="botaoProdutos" text="Produtos" onAction="#abrirProdutos" styleClass="sidebar-item" maxWidth="Infinity" alignment="CENTER_LEFT"/>
+                    <Button fx:id="botaoCategorias" text="Categorias" onAction="#abrirCategorias" styleClass="sidebar-item" maxWidth="Infinity" alignment="CENTER_LEFT"/>
+                    <Button fx:id="botaoMarcas" text="Marcas" onAction="#abrirMarcas" styleClass="sidebar-item" maxWidth="Infinity" alignment="CENTER_LEFT"/>
+                    <Button fx:id="botaoFornecedores" text="Fornecedores" onAction="#abrirFornecedores" styleClass="sidebar-item" maxWidth="Infinity" alignment="CENTER_LEFT"/>
+                    <Button fx:id="botaoEntrada" text="Entrada de Produtos" onAction="#abrirEntradaProdutos" styleClass="sidebar-item" maxWidth="Infinity" alignment="CENTER_LEFT"/>
+                    <Button fx:id="botaoSaida" text="Saída de Produtos" onAction="#abrirSaidaProdutos" styleClass="sidebar-item" maxWidth="Infinity" alignment="CENTER_LEFT"/>
+                    <Button fx:id="botaoTransferencias" text="Transferências" onAction="#abrirTransferencias" styleClass="sidebar-item" maxWidth="Infinity" alignment="CENTER_LEFT"/>
+
+                    <Label text="VENDAS" styleClass="sidebar-secao"/>
+                    <Button fx:id="botaoVendas" text="Nova Venda" onAction="#abrirVendas" styleClass="sidebar-item" maxWidth="Infinity" alignment="CENTER_LEFT"/>
+                    <Button fx:id="botaoClientes" text="Clientes" onAction="#abrirClientes" styleClass="sidebar-item" maxWidth="Infinity" alignment="CENTER_LEFT"/>
+                    <Button fx:id="botaoPedidos" text="Pedidos" onAction="#abrirPedidos" styleClass="sidebar-item" maxWidth="Infinity" alignment="CENTER_LEFT"/>
+                </VBox>
+            </ScrollPane>
+        </VBox>
+    </left>
 
     <top>
-        <VBox alignment="CENTER" styleClass="cabecalho">
-            <padding><Insets top="30" bottom="30"/></padding>
-            <Label text="Sistema de Gerenciamento de Estoque" styleClass="titulo-principal"/>
-            <Label text="Controle de produtos, vendas e emissão de notas fiscais" styleClass="subtitulo"/>
+        <VBox>
+            <HBox alignment="CENTER_LEFT" spacing="12" styleClass="topbar">
+                <padding><Insets top="16" bottom="16" left="30" right="30"/></padding>
+                <VBox HBox.hgrow="ALWAYS">
+                    <Label text="Dashboard" styleClass="topbar-titulo"/>
+                    <Label text="Visão geral do seu estoque e vendas" styleClass="topbar-subtitulo"/>
+                </VBox>
+                <Label fx:id="iconeSino"/>
+                <VBox alignment="CENTER_RIGHT">
+                    <Label text="Administrador" styleClass="topbar-usuario-nome"/>
+                    <Label text="admin@estoquefacil.com.br" styleClass="topbar-usuario-email"/>
+                </VBox>
+            </HBox>
+            <Region styleClass="faixa-laranja"/>
         </VBox>
     </top>
 
     <center>
-        <HBox alignment="CENTER" spacing="30">
-            <padding><Insets top="40" bottom="40" left="40" right="40"/></padding>
+        <ScrollPane fitToWidth="true" styleClass="area-conteudo">
+            <VBox spacing="20" styleClass="area-conteudo">
+                <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
 
-            <Button text="📦  Produtos" onAction="#abrirTelaProdutos" styleClass="botao-menu"/>
-            <Button text="🧾  Nova Venda" onAction="#abrirTelaVendas" styleClass="botao-menu"/>
+                <!-- Cards de resumo (KPIs) -->
+                <HBox spacing="16" fx:id="containerKpis"/>
 
-        </HBox>
+                <!-- Dashboard completo (gráficos e tabelas) via WebView -->
+                <WebView fx:id="webViewDashboard" prefHeight="500" style="-fx-background-color: #0E1015;"/>
+            </VBox>
+        </ScrollPane>
     </center>
 
 </BorderPane>

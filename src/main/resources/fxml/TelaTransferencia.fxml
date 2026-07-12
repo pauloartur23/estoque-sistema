@@ -1,14 +1,71 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
+<BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="$CONTROLLER_NAME$"
-            prefHeight="400.0" prefWidth="600.0" >
+            fx:controller="com.estoque.controller.TransferenciaController"
+            styleClass="app-shell">
 
-</AnchorPane>
+    <top>
+        <VBox>
+            <HBox alignment="CENTER_LEFT" styleClass="janela-topbar">
+                <padding><Insets top="16" bottom="16" left="25" right="25"/></padding>
+                <Label text="🔁  Transferências entre Locais" styleClass="janela-titulo"/>
+            </HBox>
+            <Region styleClass="faixa-laranja"/>
+
+            <VBox spacing="12" styleClass="fundo-area-central">
+                <padding><Insets top="16" bottom="16" left="20" right="20"/></padding>
+
+                <VBox spacing="10" styleClass="card">
+                    <padding><Insets top="16" bottom="16" left="16" right="16"/></padding>
+
+                    <Label text="Registrar Transferência" styleClass="titulo-secao"/>
+
+                    <Label text="Código do Produto *" styleClass="rotulo-campo"/>
+                    <TextField fx:id="campoCodigoProduto" promptText="Código do produto"/>
+
+                    <HBox spacing="20">
+                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                            <Label text="De (Origem) *" styleClass="rotulo-campo"/>
+                            <ComboBox fx:id="comboOrigem" maxWidth="Infinity" promptText="Local de origem"/>
+                        </VBox>
+                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                            <Label text="Para (Destino) *" styleClass="rotulo-campo"/>
+                            <ComboBox fx:id="comboDestino" maxWidth="Infinity" promptText="Local de destino"/>
+                        </VBox>
+                        <VBox spacing="4">
+                            <Label text="Quantidade *" styleClass="rotulo-campo"/>
+                            <TextField fx:id="campoQuantidade" prefWidth="100"/>
+                        </VBox>
+                    </HBox>
+
+                    <Label text="Observações" styleClass="rotulo-campo"/>
+                    <TextArea fx:id="campoObservacoes" prefRowCount="2" wrapText="true"/>
+
+                    <Button text="✔ Registrar Transferência" onAction="#onRegistrarTransferencia" styleClass="botao-primario" maxWidth="Infinity"/>
+                </VBox>
+            </VBox>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="14" styleClass="fundo-area-central">
+            <padding><Insets top="0" bottom="20" left="20" right="20"/></padding>
+            <Label text="Histórico de Transferências" styleClass="titulo-secao"/>
+            <TableView fx:id="tabelaTransferencias" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colProduto" text="Produto" prefWidth="200"/>
+                    <TableColumn fx:id="colOrigem" text="Origem" prefWidth="150"/>
+                    <TableColumn fx:id="colDestino" text="Destino" prefWidth="150"/>
+                    <TableColumn fx:id="colQuantidade" text="Qtd." prefWidth="80"/>
+                    <TableColumn fx:id="colData" text="Data" prefWidth="160"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+</BorderPane>

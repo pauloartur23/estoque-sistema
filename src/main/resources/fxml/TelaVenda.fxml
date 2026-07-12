@@ -6,54 +6,89 @@
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.estoque.controller.VendaController">
+            fx:controller="com.estoque.controller.VendaController"
+            styleClass="app-shell">
 
     <top>
-        <VBox spacing="10" styleClass="painel-formulario">
-            <padding><Insets top="20" bottom="10" left="20" right="20"/></padding>
-
-            <Label text="Registrar Venda" styleClass="titulo-secao"/>
-
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="Código do produto:"/>
-                <TextField fx:id="campoCodigoProduto" prefWidth="120"/>
-
-                <Label text="Quantidade:"/>
-                <TextField fx:id="campoQuantidade" prefWidth="80"/>
-
-                <Button text="Adicionar Item" onAction="#onAdicionarItem" styleClass="botao-primario"/>
-                <Button text="Remover Item" onAction="#onRemoverItem" styleClass="botao-perigo"/>
+        <VBox>
+            <HBox alignment="CENTER_LEFT" styleClass="janela-topbar">
+                <padding><Insets top="16" bottom="16" left="25" right="25"/></padding>
+                <Label text="🧾  Nova Venda" styleClass="janela-titulo"/>
             </HBox>
+            <Region styleClass="faixa-laranja"/>
 
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="Cliente:"/>
-                <TextField fx:id="campoNomeCliente" prefWidth="200" promptText="Consumidor Final"/>
+            <VBox spacing="12" styleClass="fundo-area-central">
+                <padding><Insets top="16" bottom="16" left="20" right="20"/></padding>
 
-                <Label text="Forma de pagamento:"/>
-                <ComboBox fx:id="comboFormaPagamento" prefWidth="180"/>
-            </HBox>
+                <VBox spacing="10" styleClass="card">
+                    <padding><Insets top="16" bottom="16" left="16" right="16"/></padding>
+
+                    <Label text="Adicionar item à venda (bipe ou digite o código)" styleClass="titulo-secao"/>
+
+                    <HBox spacing="10" alignment="BOTTOM_LEFT">
+                        <VBox spacing="4">
+                            <Label text="Código do produto" styleClass="rotulo-campo"/>
+                            <TextField fx:id="campoCodigoProduto" prefWidth="160"/>
+                        </VBox>
+                        <VBox spacing="4">
+                            <Label text="Quantidade" styleClass="rotulo-campo"/>
+                            <TextField fx:id="campoQuantidade" prefWidth="90" text="1"/>
+                        </VBox>
+                        <Button text="+ Adicionar Item" onAction="#onAdicionarItem" styleClass="botao-primario"/>
+                        <Button text="Remover Item" onAction="#onRemoverItem" styleClass="botao-perigo"/>
+                    </HBox>
+
+                    <Separator styleClass="separator-orange"/>
+
+                    <HBox spacing="20" alignment="CENTER_LEFT">
+                        <VBox spacing="4">
+                            <Label text="Cliente" styleClass="rotulo-campo"/>
+                            <ComboBox fx:id="comboCliente" prefWidth="220" promptText="Consumidor Final"/>
+                        </VBox>
+                        <VBox spacing="4">
+                            <Label text="Desconto (R\$)" styleClass="rotulo-campo"/>
+                            <HBox spacing="6">
+                                <TextField fx:id="campoDesconto" prefWidth="100" text="0"/>
+                                <Button text="Aplicar" onAction="#onAplicarDesconto" styleClass="botao-secundario"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+
+                    <Label text="Forma de Pagamento *" styleClass="rotulo-campo"/>
+                    <HBox fx:id="containerFormasPagamento" spacing="10"/>
+
+                    <Label text="Bandeiras aceitas" styleClass="rotulo-campo-pequeno"/>
+                    <HBox fx:id="containerBandeiras" spacing="14" alignment="CENTER_LEFT"/>
+
+                    <Label text="Observações" styleClass="rotulo-campo"/>
+                    <TextArea fx:id="campoObservacoes" prefRowCount="1" wrapText="true"/>
+                </VBox>
+            </VBox>
         </VBox>
     </top>
 
     <center>
-        <TableView fx:id="tabelaItens">
-            <padding><Insets top="10" bottom="10" left="20" right="20"/></padding>
-            <columns>
-                <TableColumn fx:id="colCodigo" text="Código" prefWidth="80"/>
-                <TableColumn fx:id="colProduto" text="Produto" prefWidth="220"/>
-                <TableColumn fx:id="colQuantidade" text="Qtd." prefWidth="70"/>
-                <TableColumn fx:id="colPrecoUnitario" text="Preço Unit." prefWidth="120"/>
-                <TableColumn fx:id="colSubtotal" text="Subtotal" prefWidth="120"/>
-            </columns>
-        </TableView>
+        <VBox spacing="10" styleClass="fundo-area-central">
+            <padding><Insets top="0" bottom="10" left="20" right="20"/></padding>
+            <Label text="Itens da venda" styleClass="titulo-secao"/>
+            <TableView fx:id="tabelaItens" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colCodigo" text="Código" prefWidth="90"/>
+                    <TableColumn fx:id="colProduto" text="Produto" prefWidth="240"/>
+                    <TableColumn fx:id="colQuantidade" text="Qtd." prefWidth="80"/>
+                    <TableColumn fx:id="colPrecoUnitario" text="Preço Unit." prefWidth="130"/>
+                    <TableColumn fx:id="colSubtotal" text="Subtotal" prefWidth="130"/>
+                </columns>
+            </TableView>
+        </VBox>
     </center>
 
     <bottom>
         <HBox spacing="20" alignment="CENTER_RIGHT" styleClass="rodape-venda">
-            <padding><Insets top="15" bottom="15" left="20" right="20"/></padding>
-            <Label fx:id="labelTotal" text="Total: R\$ 0.00" styleClass="label-total"/>
+            <padding><Insets top="18" bottom="18" left="20" right="20"/></padding>
+            <Label fx:id="labelTotal" text="Total: R\$ 0.00" styleClass="label-total" HBox.hgrow="ALWAYS"/>
             <Button text="Cancelar Venda" onAction="#onCancelarVenda" styleClass="botao-perigo"/>
-            <Button text="Finalizar Venda e Gerar Nota Fiscal" onAction="#onFinalizarVenda" styleClass="botao-primario"/>
+            <Button text="✔ Finalizar Venda e Gerar Nota Fiscal" onAction="#onFinalizarVenda" styleClass="botao-primario"/>
         </HBox>
     </bottom>
 

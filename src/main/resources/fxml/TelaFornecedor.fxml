@@ -1,14 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
+<BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="$CONTROLLER_NAME$"
-            prefHeight="400.0" prefWidth="600.0" >
+            fx:controller="com.estoque.controller.FornecedorController"
+            styleClass="app-shell">
 
-</AnchorPane>
+    <top>
+        <VBox>
+            <HBox alignment="CENTER_LEFT" styleClass="janela-topbar">
+                <padding><Insets top="16" bottom="16" left="25" right="25"/></padding>
+                <Label text="🚚  Fornecedores" styleClass="janela-titulo"/>
+            </HBox>
+            <Region styleClass="faixa-laranja"/>
+        </VBox>
+    </top>
+
+    <left>
+        <ScrollPane fitToWidth="true" styleClass="fundo-area-central">
+            <VBox spacing="10" styleClass="card" prefWidth="320">
+                <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+                <Label text="Cadastro de Fornecedor" styleClass="titulo-secao"/>
+
+                <Label text="Nome *" styleClass="rotulo-campo"/>
+                <TextField fx:id="campoNome" promptText="Razão social ou nome"/>
+
+                <Label text="Documento (CNPJ/CPF)" styleClass="rotulo-campo"/>
+                <TextField fx:id="campoDocumento" promptText="00.000.000/0001-00"/>
+
+                <Label text="Telefone" styleClass="rotulo-campo"/>
+                <TextField fx:id="campoTelefone" promptText="(00) 00000-0000"/>
+
+                <Label text="E-mail" styleClass="rotulo-campo"/>
+                <TextField fx:id="campoEmail" promptText="contato@fornecedor.com"/>
+
+                <Label text="Endereço" styleClass="rotulo-campo"/>
+                <TextField fx:id="campoEndereco" promptText="Cidade - UF"/>
+
+                <HBox spacing="8">
+                    <Button text="Salvar" onAction="#onSalvar" styleClass="botao-primario" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    <Button text="Novo" onAction="#onNovo" styleClass="botao-secundario" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <Button text="Remover selecionado" onAction="#onRemover" styleClass="botao-perigo" maxWidth="Infinity"/>
+            </VBox>
+        </ScrollPane>
+    </left>
+
+    <center>
+        <VBox spacing="14" styleClass="fundo-area-central">
+            <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+            <HBox spacing="10" alignment="CENTER_LEFT" styleClass="card">
+                <padding><Insets top="12" bottom="12" left="16" right="16"/></padding>
+                <Label text="🔎 Buscar:" styleClass="rotulo-campo"/>
+                <TextField fx:id="campoBusca" prefWidth="280" promptText="Nome do fornecedor"/>
+                <Button text="Buscar" onAction="#onBuscar" styleClass="botao-secundario"/>
+            </HBox>
+
+            <Label text="Fornecedores cadastrados" styleClass="titulo-secao"/>
+            <TableView fx:id="tabelaFornecedores" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colNome" text="Nome" prefWidth="220"/>
+                    <TableColumn fx:id="colDocumento" text="Documento" prefWidth="160"/>
+                    <TableColumn fx:id="colTelefone" text="Telefone" prefWidth="140"/>
+                    <TableColumn fx:id="colEmail" text="E-mail" prefWidth="200"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+</BorderPane>
