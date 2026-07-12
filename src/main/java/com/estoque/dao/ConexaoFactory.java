@@ -7,14 +7,18 @@ import java.sql.SQLException;
 /**
  * Fábrica de conexões com o banco de dados MySQL.
  * Padrão utilizado: Singleton.
- * Ajuste URL, USUARIO e SENHA conforme seu ambiente (ex.: MySQL via Docker).
+ * Ajuste URL, USUARIO e SENHA conforme seu ambiente.
+ * <p>
+ * useUnicode + characterEncoding garantem que acentos (ex: "Periféricos")
+ * não cheguem corrompidos do banco para o Java.
  */
 public class ConexaoFactory {
 
     private static final String URL =
-            "jdbc:mysql://localhost:3306/estoque_db?useSSL=false&serverTimezone=UTC";
+            "jdbc:mysql://localhost:3306/estoque_db?useSSL=false&serverTimezone=UTC" +
+                    "&useUnicode=true&characterEncoding=UTF-8";
     private static final String USUARIO = "root";
-    private static final String SENHA = "root";
+    private static final String SENHA = "123456";
 
     private static ConexaoFactory instancia;
 

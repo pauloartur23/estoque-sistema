@@ -1,25 +1,29 @@
 package com.estoque.dao;
 
+import com.estoque.model.Cliente;
 import com.estoque.model.ItemVenda;
+import com.estoque.model.MovimentacaoEstoque;
 import com.estoque.model.Produto;
 import com.estoque.model.Venda;
 
+import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
-/**
- * DAO responsável por persistir vendas.
- * A gravação de uma venda é transacional: grava o cabeçalho (venda),
- * os itens (item_venda) e dá baixa no estoque (produto) — tudo ou nada.
- */
 public class VendaDAO {
 
     private final ConexaoFactory conexaoFactory = ConexaoFactory.getInstance();
+    private final MovimentacaoEstoqueDAO movimentacaoDAO = new MovimentacaoEstoqueDAO();
+    private static final DateTimeFormatter FORMATO_DIA = DateTimeFormatter.ofPattern("dd/MM");
 
     public void salvarVendaComBaixaEstoque(Venda venda) throws SQLException {
-        String sqlVenda = "INSERT INTO venda (data_venda, valor_total, forma_pagamento, nome_cliente) " +
-                "VALUES (NOW(), ?, ?, ?)";
+        String sqlVenda = "INSERT INTO venda (cliente_id, data_venda, valor_total, desconto, forma_pagamento, nome_cliente, observacoes) " +
+                "VALUES (?, NOW(), ?, ?, ?, ?, ?)";
         String sqlItem = "INSERT INTO item_venda (venda_id, produto_id, quantidade, preco_unitario, subtotal) " +
                 "VALUES (?, ?, ?, ?, ?)";
         String sqlBaixaEstoque = "UPDATE produto SET quantidade = quantidade - ? WHERE id = ?";
@@ -31,9 +35,16 @@ public class VendaDAO {
 
             int vendaId;
             try (PreparedStatement stmtVenda = con.prepareStatement(sqlVenda, Statement.RETURN_GENERATED_KEYS)) {
-                stmtVenda.setBigDecimal(1, venda.getValorTotal());
-                stmtVenda.setString(2, venda.getFormaPagamento());
-                stmtVenda.setString(3, venda.getNomeCliente());
+                if (venda.getCliente() != null) {
+                    stmtVenda.setInt(1, venda.getCliente().getId());
+                } else {
+                    stmtVenda.setNull(1, Types.INTEGER);
+                }
+                stmtVenda.setBigDecimal(2, venda.getValorTotal());
+                stmtVenda.setBigDecimal(3, venda.getDesconto());
+                stmtVenda.setString(4, venda.getFormaPagamento());
+                stmtVenda.setString(5, venda.getNomeCliente());
+                stmtVenda.setString(6, venda.getObservacoes());
                 stmtVenda.executeUpdate();
 
                 try (ResultSet rs = stmtVenda.getGeneratedKeys()) {
@@ -52,23 +63,23 @@ public class VendaDAO {
                     stmtItem.setInt(3, item.getQuantidade());
                     stmtItem.setBigDecimal(4, item.getPrecoUnitario());
                     stmtItem.setBigDecimal(5, item.getSubtotal());
-                    stmtItem.addBatch();
+                    stmtItem.executeUpdate();
 
                     stmtBaixa.setInt(1, item.getQuantidade());
                     stmtBaixa.setInt(2, item.getProduto().getId());
-                    stmtBaixa.addBatch();
-                }
+                    stmtBaixa.executeUpdate();
 
-                stmtItem.executeBatch();
-                stmtBaixa.executeBatch();
+                    MovimentacaoEstoque mov = new MovimentacaoEstoque(
+                            MovimentacaoEstoque.Tipo.VENDA, item.getProduto(), item.getQuantidade(),
+                            "Venda #" + vendaId, vendaId);
+                    movimentacaoDAO.registrar(con, mov);
+                }
             }
 
             con.commit();
 
         } catch (SQLException e) {
-            if (con != null) {
-                con.rollback();
-            }
+            if (con != null) con.rollback();
             throw e;
         } finally {
             if (con != null) {
@@ -81,14 +92,10 @@ public class VendaDAO {
     public List<Venda> listarTodas() throws SQLException {
         String sql = "SELECT * FROM venda ORDER BY data_venda DESC";
         List<Venda> vendas = new ArrayList<>();
-
         try (Connection con = conexaoFactory.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                vendas.add(mapearCabecalho(rs));
-            }
+            while (rs.next()) vendas.add(mapearCabecalho(rs));
         }
         return vendas;
     }
@@ -104,9 +111,7 @@ public class VendaDAO {
 
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
+                if (!rs.next()) return null;
                 venda = mapearCabecalho(rs);
             }
 
@@ -134,16 +139,68 @@ public class VendaDAO {
         return venda;
     }
 
+    public int contarVendasHoje() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM venda WHERE DATE(data_venda) = CURDATE()";
+        try (Connection con = conexaoFactory.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            rs.next();
+            return rs.getInt(1);
+        }
+    }
+
+    public BigDecimal somarFaturamentoHoje() throws SQLException {
+        String sql = "SELECT COALESCE(SUM(valor_total), 0) FROM venda WHERE DATE(data_venda) = CURDATE()";
+        try (Connection con = conexaoFactory.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            rs.next();
+            return rs.getBigDecimal(1);
+        }
+    }
+
+    public Map<String, BigDecimal> faturamentoUltimosDias(int dias) throws SQLException {
+        String sql = "SELECT DATE(data_venda) AS dia, SUM(valor_total) AS total FROM venda " +
+                "WHERE data_venda >= (CURDATE() - INTERVAL ? DAY) GROUP BY DATE(data_venda)";
+
+        Map<LocalDate, BigDecimal> porData = new java.util.HashMap<>();
+        try (Connection con = conexaoFactory.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+            stmt.setInt(1, dias - 1);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    porData.put(rs.getDate("dia").toLocalDate(), rs.getBigDecimal("total"));
+                }
+            }
+        }
+
+        Map<String, BigDecimal> resultado = new LinkedHashMap<>();
+        LocalDate hoje = LocalDate.now();
+        for (int i = dias - 1; i >= 0; i--) {
+            LocalDate dia = hoje.minusDays(i);
+            resultado.put(dia.format(FORMATO_DIA), porData.getOrDefault(dia, BigDecimal.ZERO));
+        }
+        return resultado;
+    }
+
     private Venda mapearCabecalho(ResultSet rs) throws SQLException {
         Venda venda = new Venda();
         venda.setId(rs.getInt("id"));
-        Timestamp ts = rs.getTimestamp("data_venda");
-        if (ts != null) {
-            venda.setDataVenda(ts.toLocalDateTime());
+
+        int clienteId = rs.getInt("cliente_id");
+        if (!rs.wasNull()) {
+            Cliente c = new Cliente();
+            c.setId(clienteId);
+            venda.setCliente(c);
         }
+
+        Timestamp ts = rs.getTimestamp("data_venda");
+        if (ts != null) venda.setDataVenda(ts.toLocalDateTime());
         venda.setValorTotal(rs.getBigDecimal("valor_total"));
+        venda.setDesconto(rs.getBigDecimal("desconto") != null ? rs.getBigDecimal("desconto") : BigDecimal.ZERO);
         venda.setFormaPagamento(rs.getString("forma_pagamento"));
         venda.setNomeCliente(rs.getString("nome_cliente"));
+        venda.setObservacoes(rs.getString("observacoes"));
         return venda;
     }
 }
