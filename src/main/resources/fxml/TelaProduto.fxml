@@ -119,6 +119,10 @@
                 <Button text="Buscar" onAction="#onBuscar" styleClass="botao-secundario"/>
             </HBox>
 
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Button text="🏷 Gerar Etiqueta do Produto Selecionado" onAction="#onGerarEtiqueta" styleClass="botao-secundario"/>
+            </HBox>
+
             <Label text="Produtos cadastrados" styleClass="titulo-secao"/>
 
             <TableView fx:id="tabelaProdutos" VBox.vgrow="ALWAYS">

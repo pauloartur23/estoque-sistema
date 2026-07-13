@@ -23,12 +23,12 @@
                 <VBox spacing="10" styleClass="card">
                     <padding><Insets top="16" bottom="16" left="16" right="16"/></padding>
 
-                    <Label text="Adicionar item à venda (bipe ou digite o código)" styleClass="titulo-secao"/>
+                    <Label text="Adicionar item à venda (bipe o código ou digite e aperte Enter)" styleClass="titulo-secao"/>
 
                     <HBox spacing="10" alignment="BOTTOM_LEFT">
                         <VBox spacing="4">
                             <Label text="Código do produto" styleClass="rotulo-campo"/>
-                            <TextField fx:id="campoCodigoProduto" prefWidth="160"/>
+                            <TextField fx:id="campoCodigoProduto" prefWidth="160" onAction="#onAdicionarItem"/>
                         </VBox>
                         <VBox spacing="4">
                             <Label text="Quantidade" styleClass="rotulo-campo"/>
