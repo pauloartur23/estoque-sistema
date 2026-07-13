@@ -10,6 +10,7 @@ import com.estoque.service.NotaFiscalService;
 import com.estoque.service.VendaService;
 import com.estoque.util.AlertUtil;
 import com.estoque.util.IconFactory;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -54,10 +55,6 @@ public class VendaController {
         montarBotoesFormaPagamento();
         montarBandeirasAceitas();
 
-        // Impede que o usuário "desmarque" a forma de pagamento clicando
-        // duas vezes no mesmo botão — sempre mantém uma opção selecionada
-        // depois da primeira escolha. Isso evita a venda ficar sem forma
-        // de pagamento sem o usuário perceber.
         grupoFormaPagamento.selectedToggleProperty().addListener((obs, antigo, novo) -> {
             if (novo == null && antigo != null) {
                 grupoFormaPagamento.selectToggle(antigo);
@@ -77,6 +74,10 @@ public class VendaController {
         colSubtotal.setCellValueFactory(d -> new SimpleStringProperty("R$ " + d.getValue().getSubtotal()));
 
         atualizarTabelaETotal();
+
+        // Ao abrir a tela, o cursor já nasce no campo de código, pronto
+        // para bipar o primeiro produto sem precisar clicar em nada.
+        Platform.runLater(() -> campoCodigoProduto.requestFocus());
     }
 
     /** Monta os botões de forma de pagamento com ícone real (Dinheiro, PIX, Débito, Crédito). */
@@ -100,7 +101,6 @@ public class VendaController {
         return botao;
     }
 
-    /** Fileira decorativa com as logos das bandeiras aceitas (Visa, Mastercard, Elo, Amex, Hipercard, Boleto). */
     private void montarBandeirasAceitas() {
         String[][] bandeiras = {
                 {"visa", "#1A1F71"}, {"mastercard", "#EB001B"}, {"elo", "#000000"},
@@ -113,16 +113,24 @@ public class VendaController {
         }
     }
 
+    /**
+     * Dispara tanto ao clicar em "+ Adicionar Item" quanto ao apertar
+     * Enter no campo de código — que é exatamente o que um leitor de
+     * código de barras USB faz automaticamente após bipar.
+     */
     @FXML
     private void onAdicionarItem() {
         try {
             String codigo = campoCodigoProduto.getText().trim();
+            if (codigo.isEmpty()) {
+                return;
+            }
             int quantidade = Integer.parseInt(campoQuantidade.getText().trim());
 
             vendaService.adicionarItem(vendaAtual, codigo, quantidade);
 
             campoCodigoProduto.clear();
-            campoQuantidade.clear();
+            campoQuantidade.setText("1");
             atualizarTabelaETotal();
 
         } catch (NumberFormatException e) {
@@ -133,6 +141,10 @@ public class VendaController {
             AlertUtil.aviso("Estoque insuficiente", e.getMessage());
         } catch (SQLException e) {
             AlertUtil.erro("Erro no banco de dados", e.getMessage());
+        } finally {
+            // Devolve o foco para o campo de código, pronto para o próximo
+            // produto ser bipado em sequência, sem precisar tocar no mouse.
+            campoCodigoProduto.requestFocus();
         }
     }
 
@@ -195,6 +207,7 @@ public class VendaController {
             campoObservacoes.clear();
             grupoFormaPagamento.selectToggle(null);
             atualizarTabelaETotal();
+            campoCodigoProduto.requestFocus();
 
         } catch (SQLException e) {
             AlertUtil.erro("Erro no banco de dados", "Não foi possível registrar a venda.\n" + e.getMessage());

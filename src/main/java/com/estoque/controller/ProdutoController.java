@@ -19,6 +19,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
@@ -28,6 +29,8 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
 
 public class ProdutoController {
 
@@ -64,6 +67,7 @@ public class ProdutoController {
     private final MarcaService marcaService = new MarcaService();
     private final FornecedorService fornecedorService = new FornecedorService();
     private final ImagemService imagemService = new ImagemService();
+    private final BarcodeService barcodeService = new BarcodeService();
 
     private String caminhoImagemSelecionada;
 
@@ -265,6 +269,43 @@ public class ProdutoController {
             carregarTabela();
         } catch (SQLException e) {
             AlertUtil.erro("Erro no banco de dados", e.getMessage());
+        }
+    }
+
+    /** Gera um PDF com etiqueta(s) de código de barras do produto selecionado e abre automaticamente. */
+    @FXML
+    private void onGerarEtiqueta() {
+        Produto selecionado = tabelaProdutos.getSelectionModel().getSelectedItem();
+        if (selecionado == null) {
+            AlertUtil.aviso("Nenhum produto selecionado", "Selecione um produto na tabela para gerar a etiqueta.");
+            return;
+        }
+
+        TextInputDialog dialog = new TextInputDialog("1");
+        dialog.setTitle("Gerar Etiqueta");
+        dialog.setHeaderText("Quantas etiquetas deseja imprimir para '" + selecionado.getNome() + "'?");
+        dialog.setContentText("Quantidade:");
+
+        Optional<String> resultado = dialog.showAndWait();
+        if (resultado.isEmpty()) return;
+
+        try {
+            int copias = Integer.parseInt(resultado.get().trim());
+            if (copias <= 0) {
+                AlertUtil.aviso("Quantidade inválida", "A quantidade deve ser maior que zero.");
+                return;
+            }
+
+            File arquivo = barcodeService.gerarFolhaDeEtiquetas(List.of(selecionado), copias);
+            barcodeService.abrirArquivo(arquivo);
+
+            AlertUtil.info("Etiqueta gerada",
+                    "Etiqueta(s) gerada(s) com sucesso!\nArquivo: " + arquivo.getAbsolutePath());
+
+        } catch (NumberFormatException e) {
+            AlertUtil.aviso("Quantidade inválida", "Informe um número válido de etiquetas.");
+        } catch (Exception e) {
+            AlertUtil.erro("Erro ao gerar etiqueta", "Não foi possível gerar o PDF da etiqueta.\n" + e.getMessage());
         }
     }
 
